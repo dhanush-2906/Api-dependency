@@ -1,0 +1,9 @@
+service: Customer Service
+type: API
+dependencies:
+  - Auth Service
+  - Customer DB
+consumers:
+  - Customer Portal
+  - Cart Service
+  - Order Service

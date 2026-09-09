@@ -1,0 +1,8 @@
+service: Cart Service
+type: API
+dependencies:
+  - Customer Service
+  - Inventory Service
+  - Pricing Service
+consumers:
+  - Customer Portal

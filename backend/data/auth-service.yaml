@@ -1,0 +1,6 @@
+service: Auth Service
+type: API
+dependencies: []
+consumers:
+  - Customer Portal
+  - Admin Console

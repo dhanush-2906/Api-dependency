@@ -1,0 +1,29 @@
+{
+  "name": "api-dependency-visualizer-backend",
+  "version": "1.0.0",
+  "description": "Backend for API Dependency Visualizer and Change Impact Analyzer",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --detectOpenHandles --colors"
+  },
+  "keywords": ["dependency-visualizer", "impact-analysis", "ups-hackathon"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true
+  }
+}

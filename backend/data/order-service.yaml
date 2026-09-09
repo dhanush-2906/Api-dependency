@@ -1,0 +1,10 @@
+service: Order Service
+type: API
+dependencies:
+  - Customer Service
+  - Inventory Service
+  - Pricing Service
+  - Payment Service
+consumers:
+  - Customer Portal
+  - Invoice Service

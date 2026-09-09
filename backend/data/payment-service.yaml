@@ -1,0 +1,7 @@
+service: Payment Service
+type: API
+dependencies:
+  - Auth Service
+  - Payment Gateway
+consumers:
+  - Order Service

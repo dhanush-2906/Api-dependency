@@ -1,0 +1,16 @@
+{
+  "name": "ups-hackathon-api-dependency-visualizer",
+  "version": "1.0.0",
+  "description": "API Dependency Visualizer & Change Impact Analyzer - UPS Hackathon 2026",
+  "scripts": {
+    "backend:start": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:test": "cd backend && npm test",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "test": "npm run backend:test"
+  },
+  "keywords": ["dependency-graph", "blast-radius", "impact-analysis", "ups-hackathon"],
+  "author": "",
+  "license": "ISC"
+}

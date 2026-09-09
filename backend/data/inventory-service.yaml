@@ -1,0 +1,8 @@
+service: Inventory Service
+type: API
+dependencies:
+  - Product Catalog Service
+  - Product DB
+consumers:
+  - Cart Service
+  - Order Service

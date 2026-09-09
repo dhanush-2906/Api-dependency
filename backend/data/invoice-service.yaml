@@ -1,0 +1,5 @@
+service: Invoice Service
+type: API
+dependencies:
+  - Order Service
+consumers: []

@@ -1,0 +1,7 @@
+service: Pricing Service
+type: API
+dependencies:
+  - Product Catalog Service
+consumers:
+  - Cart Service
+  - Order Service

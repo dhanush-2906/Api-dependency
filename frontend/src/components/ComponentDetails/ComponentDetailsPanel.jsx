@@ -8,7 +8,10 @@ import {
   FileCode,
   AlertCircle,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  Edit3,
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 
 export default function ComponentDetailsPanel({
@@ -16,6 +19,8 @@ export default function ComponentDetailsPanel({
   onSimulateFailure,
   onAnalyzeChange,
   onSelectComponent,
+  onEditComponent,
+  onDeleteComponent,
   loadingImpact
 }) {
   if (!selectedDetails) {
@@ -58,6 +63,28 @@ export default function ComponentDetailsPanel({
         <div className="inspector-title-group">
           <Layers size={16} color="var(--brand-primary)" />
           <span className="inspector-title">{component.name}</span>
+          {component.isUserCreated && (
+            <span
+              title="User-created component"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                padding: '1px 6px',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(52, 211, 153, 0.12)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                color: 'var(--app-color)',
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}
+            >
+              <Sparkles size={9} />
+              Custom
+            </span>
+          )}
         </div>
         <span className={`nav-item-type-badge ${component.type.toLowerCase()}`}>
           {component.type === 'SERVICE' ? 'API' : component.type}
@@ -142,6 +169,32 @@ export default function ComponentDetailsPanel({
           </div>
         </button>
       </div>
+
+      {/* Ecosystem Management Actions */}
+      {(onEditComponent || onDeleteComponent) && (
+        <div className="ecosystem-action-row">
+          {onEditComponent && (
+            <button
+              className="ecosystem-action-btn edit"
+              onClick={() => onEditComponent(selectedDetails)}
+              title="Edit this component's type and connections"
+            >
+              <Edit3 size={13} />
+              <span>Edit</span>
+            </button>
+          )}
+          {onDeleteComponent && (
+            <button
+              className="ecosystem-action-btn delete"
+              onClick={() => onDeleteComponent(selectedDetails)}
+              title="Remove this component from the ecosystem"
+            >
+              <Trash2 size={13} />
+              <span>Delete</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Upstream / Downstream Neighborhood */}
       <div style={{ marginTop: 18 }}>

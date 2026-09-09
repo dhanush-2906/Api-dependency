@@ -38,11 +38,12 @@ function getComponentById(req, res, next) {
     const directUpstream = graph.getDirectUpstream(id).map(c => c.toJSON());
     const downstreamTraversal = traverseDownstream(graph, id);
     const upstreamTraversal = traverseUpstream(graph, id);
+    const isUserCreated = datasetService.isUserCreated(id);
 
     res.json({
       success: true,
       data: {
-        component: component.toJSON(),
+        component: { ...component.toJSON(), isUserCreated },
         directDownstream,
         directUpstream,
         totalDownstreamCount: downstreamTraversal.totalCount,

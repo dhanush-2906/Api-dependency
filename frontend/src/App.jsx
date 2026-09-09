@@ -9,6 +9,9 @@ import ComponentDetailsPanel from './components/ComponentDetails/ComponentDetail
 import ImpactResultsPanel from './components/ImpactPanel/ImpactResultsPanel';
 import ValidationModal from './components/Validation/ValidationModal';
 import CommandPaletteModal from './components/CommandPalette/CommandPaletteModal';
+import ComponentModal from './components/Ecosystem/ComponentModal';
+import DeleteConfirmModal from './components/Ecosystem/DeleteConfirmModal';
+import MutationToast from './components/Ecosystem/MutationToast';
 
 import {
   getGraphData,
@@ -17,7 +20,11 @@ import {
   getMetrics,
   getValidationReport,
   simulateFailure,
-  analyzeChangeImpact
+  analyzeChangeImpact,
+  createComponent,
+  updateComponent,
+  deleteComponent,
+  resetEcosystem
 } from './services/api';
 
 export default function App() {
@@ -43,7 +50,17 @@ export default function App() {
   const [loadingMessage, setLoadingMessage] = useState('Initializing Dependency Topology...');
   const [error, setError] = useState(null);
 
-  // Initial Data Fetch
+  // ─── Ecosystem CRUD State ──────────────────────────────────────────────────
+  const [ecosystemModal, setEcosystemModal] = useState({ open: false, mode: 'add', initialData: null });
+  const [deleteModal, setDeleteModal] = useState({ open: false, details: null });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (type, message) => setToast({ type, message });
+  const dismissToast = () => setToast(null);
+
+  // ─── Initial Data Fetch ────────────────────────────────────────────────────
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -72,6 +89,40 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  /**
+   * Refresh all ecosystem data after a CRUD mutation (no page reload).
+   * Optionally selects a specific component ID after refresh.
+   */
+  const refreshEcosystem = useCallback(async (selectId = null) => {
+    try {
+      const [gData, cList, mData] = await Promise.all([
+        getGraphData(),
+        getComponents(),
+        getMetrics()
+      ]);
+      setGraphData(gData);
+      setComponents(cList);
+      setMetrics(mData);
+      setImpactData(null);
+      setMode('NORMAL');
+
+      if (selectId) {
+        await handleSelectComponent(selectId);
+      } else if (selectedComponentId) {
+        // Re-fetch details for current selection (topology may have changed)
+        try {
+          const details = await getComponentById(selectedComponentId);
+          setSelectedDetails(details);
+        } catch {
+          setSelectedDetails(null);
+          setSelectedComponentId(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh ecosystem:', err);
+    }
+  }, [selectedComponentId]);
 
   useEffect(() => {
     loadInitialData();
@@ -152,6 +203,91 @@ export default function App() {
     setLayoutDirection(prev => (prev === 'LR' ? 'TB' : 'LR'));
   };
 
+  // ─── Ecosystem CRUD Handlers ───────────────────────────────────────────────
+
+  const handleOpenAddModal = () => {
+    setEcosystemModal({ open: true, mode: 'add', initialData: null });
+  };
+
+  const handleOpenEditModal = (details) => {
+    setEcosystemModal({ open: true, mode: 'edit', initialData: details });
+  };
+
+  const handleCloseEcosystemModal = () => {
+    setEcosystemModal(prev => ({ ...prev, open: false }));
+  };
+
+  const handleCreateComponent = async (formData) => {
+    setIsSubmitting(true);
+    try {
+      const result = await createComponent(formData);
+      handleCloseEcosystemModal();
+      showToast('success', `"${result.component.name}" added to ecosystem.`);
+      await refreshEcosystem(result.component.id);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.errors?.[0] || 'Failed to create component.';
+      showToast('error', msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateComponent = async (formData) => {
+    if (!ecosystemModal.initialData?.component) return;
+    const id = ecosystemModal.initialData.component.id;
+    setIsSubmitting(true);
+    try {
+      const result = await updateComponent(id, formData);
+      handleCloseEcosystemModal();
+      showToast('success', `"${result.component.name}" updated successfully.`);
+      await refreshEcosystem(result.component.id);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.errors?.[0] || 'Failed to update component.';
+      showToast('error', msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenDeleteModal = (details) => {
+    setDeleteModal({ open: true, details });
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModal({ open: false, details: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.details) return;
+    const { component, totalDownstreamCount } = deleteModal.details;
+    setIsDeleting(true);
+    try {
+      await deleteComponent(component.id);
+      handleCloseDeleteModal();
+      showToast('success', `"${component.name}" removed from ecosystem.`);
+      setSelectedDetails(null);
+      setSelectedComponentId(null);
+      await refreshEcosystem(null);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to delete component.';
+      showToast('error', msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleResetEcosystem = async () => {
+    try {
+      await resetEcosystem();
+      showToast('success', 'Ecosystem reset to seed dataset.');
+      setSelectedDetails(null);
+      setSelectedComponentId(null);
+      await refreshEcosystem(null);
+    } catch (err) {
+      showToast('error', 'Failed to reset ecosystem.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -192,6 +328,7 @@ export default function App() {
         onOpenPalette={() => setIsPaletteOpen(true)}
         onRunScenario={handleRunScenario}
         validationReport={validationReport}
+        onResetEcosystem={handleResetEcosystem}
       />
 
       <MetricCards
@@ -208,6 +345,7 @@ export default function App() {
           onTypeSelect={setSelectedType}
           selectedComponentId={selectedComponentId}
           onSelectComponent={handleSelectComponent}
+          onAddComponent={handleOpenAddModal}
         />
 
         <ReactFlowProvider>
@@ -229,6 +367,8 @@ export default function App() {
             onSimulateFailure={handleSimulateFailure}
             onAnalyzeChange={handleAnalyzeChange}
             onSelectComponent={handleSelectComponent}
+            onEditComponent={handleOpenEditModal}
+            onDeleteComponent={handleOpenDeleteModal}
             loadingImpact={loadingImpact}
           />
 
@@ -261,6 +401,28 @@ export default function App() {
         onOpenValidation={() => setIsValidationOpen(true)}
         metrics={metrics}
       />
+
+      {/* ─── Ecosystem Management Modals ─────────────────────────────── */}
+      <ComponentModal
+        mode={ecosystemModal.mode}
+        isOpen={ecosystemModal.open}
+        onClose={handleCloseEcosystemModal}
+        onSubmit={ecosystemModal.mode === 'add' ? handleCreateComponent : handleUpdateComponent}
+        allComponents={components}
+        initialData={ecosystemModal.initialData}
+        isSubmitting={isSubmitting}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deleteModal.open}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        componentName={deleteModal.details?.component?.name || ''}
+        isDeleting={isDeleting}
+        downstreamCount={deleteModal.details?.totalDownstreamCount || 0}
+      />
+
+      <MutationToast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 }

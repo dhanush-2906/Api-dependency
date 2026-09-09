@@ -17,7 +17,8 @@ export default function Header({
   onOpenValidation, 
   onOpenPalette,
   onRunScenario,
-  validationReport 
+  validationReport,
+  onResetEcosystem
 }) {
   const [showScenarios, setShowScenarios] = useState(false);
   const hasIssues = validationReport?.issues?.length > 0;
@@ -166,6 +167,18 @@ export default function Header({
             </>
           )}
         </button>
+
+        {onResetEcosystem && mode === 'NORMAL' && (
+          <button
+            className="btn btn-secondary"
+            onClick={onResetEcosystem}
+            title="Reset ecosystem to original seed dataset"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <RotateCcw size={13} />
+            <span>Reset Ecosystem</span>
+          </button>
+        )}
       </div>
     </header>
   );

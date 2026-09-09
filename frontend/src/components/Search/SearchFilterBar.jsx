@@ -6,7 +6,8 @@ import {
   Database, 
   Globe, 
   X,
-  Compass
+  Compass,
+  PlusCircle
 } from 'lucide-react';
 
 const FILTER_TYPES = [
@@ -24,7 +25,8 @@ export default function SearchFilterBar({
   selectedType,
   onTypeSelect,
   selectedComponentId,
-  onSelectComponent
+  onSelectComponent,
+  onAddComponent
 }) {
   const searchInputRef = useRef(null);
 
@@ -99,6 +101,17 @@ export default function SearchFilterBar({
             </button>
           ))}
         </div>
+
+        {onAddComponent && (
+          <button
+            className="add-component-btn"
+            onClick={onAddComponent}
+            title="Add a new component to the ecosystem"
+          >
+            <PlusCircle size={13} />
+            <span>Add Component</span>
+          </button>
+        )}
       </div>
 
       <div className="component-navigator-list">
@@ -119,6 +132,9 @@ export default function SearchFilterBar({
                 <div className="nav-item-left">
                   {getIcon(comp.type)}
                   <span className="nav-item-name">{comp.name}</span>
+                  {comp.isUserCreated && (
+                    <span className="user-created-dot" title="User-created component" />
+                  )}
                 </div>
                 <span className={`nav-item-type-badge ${comp.type.toLowerCase()}`}>
                   {comp.type === 'SERVICE' ? 'API' : comp.type.substring(0, 3)}

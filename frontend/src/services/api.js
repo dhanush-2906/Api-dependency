@@ -51,3 +51,25 @@ export const analyzeChangeImpact = async (componentId) => {
   const res = await client.get(`/impact/change/${componentId}`);
   return res.data.data;
 };
+
+// ─── Ecosystem Management CRUD ──────────────────────────────────────────────
+
+export const createComponent = async (data) => {
+  const res = await client.post('/components', data);
+  return res.data.data;
+};
+
+export const updateComponent = async (id, data) => {
+  const res = await client.put(`/components/${id}`, data);
+  return res.data.data;
+};
+
+export const deleteComponent = async (id) => {
+  const res = await client.delete(`/components/${id}`);
+  return res.data;
+};
+
+export const resetEcosystem = async () => {
+  const res = await client.post('/components/reset');
+  return res.data.data;
+};

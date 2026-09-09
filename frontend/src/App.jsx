@@ -8,6 +8,7 @@ import DependencyGraph from './components/DependencyGraph/DependencyGraph';
 import ComponentDetailsPanel from './components/ComponentDetails/ComponentDetailsPanel';
 import ImpactResultsPanel from './components/ImpactPanel/ImpactResultsPanel';
 import ValidationModal from './components/Validation/ValidationModal';
+import CommandPaletteModal from './components/CommandPalette/CommandPaletteModal';
 
 import {
   getGraphData,
@@ -36,8 +37,10 @@ export default function App() {
 
   const [layoutDirection, setLayoutDirection] = useState('LR');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingImpact, setLoadingImpact] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Initializing Dependency Topology...');
   const [error, setError] = useState(null);
 
   // Initial Data Fetch
@@ -74,6 +77,18 @@ export default function App() {
     loadInitialData();
   }, []);
 
+  // Global Keyboard Shortcuts (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Handle component selection
   const handleSelectComponent = useCallback(async (id) => {
     if (!id) return;
@@ -90,6 +105,7 @@ export default function App() {
   const handleSimulateFailure = async (id) => {
     try {
       setLoadingImpact(true);
+      setLoadingMessage('Simulating outage & tracing downstream blast radius...');
       const impact = await simulateFailure(id);
       setImpactData(impact);
       setMode('FAILURE_SIMULATION');
@@ -105,6 +121,7 @@ export default function App() {
   const handleAnalyzeChange = async (id) => {
     try {
       setLoadingImpact(true);
+      setLoadingMessage('Calculating downstream change propagation & validation scope...');
       const impact = await analyzeChangeImpact(id);
       setImpactData(impact);
       setMode('CHANGE_IMPACT_ANALYSIS');
@@ -113,6 +130,15 @@ export default function App() {
       console.error('Change impact analysis failed:', err);
     } finally {
       setLoadingImpact(false);
+    }
+  };
+
+  // Run Preset Scenario
+  const handleRunScenario = (id, scenarioType) => {
+    if (scenarioType === 'FAILURE') {
+      handleSimulateFailure(id);
+    } else {
+      handleAnalyzeChange(id);
     }
   };
 
@@ -131,7 +157,7 @@ export default function App() {
       <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--brand-primary)', marginBottom: '6px' }}>
-            Initializing Dependency Topology...
+            {loadingMessage}
           </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Parsing YAML datasets &amp; building canonical graph model.
@@ -163,6 +189,8 @@ export default function App() {
         mode={mode}
         onReset={handleResetSimulation}
         onOpenValidation={() => setIsValidationOpen(true)}
+        onOpenPalette={() => setIsPaletteOpen(true)}
+        onRunScenario={handleRunScenario}
         validationReport={validationReport}
       />
 
@@ -186,6 +214,7 @@ export default function App() {
           <DependencyGraph
             graphData={graphData}
             selectedComponentId={selectedComponentId}
+            selectedDetails={selectedDetails}
             onSelectComponent={handleSelectComponent}
             mode={mode}
             impactData={impactData}
@@ -217,6 +246,20 @@ export default function App() {
         isOpen={isValidationOpen}
         onClose={() => setIsValidationOpen(false)}
         validationReport={validationReport}
+      />
+
+      <CommandPaletteModal
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        components={components}
+        selectedComponentId={selectedComponentId}
+        onSelectComponent={handleSelectComponent}
+        onSimulateFailure={handleSimulateFailure}
+        onAnalyzeChange={handleAnalyzeChange}
+        onResetSimulation={handleResetSimulation}
+        onToggleLayout={handleToggleLayout}
+        onOpenValidation={() => setIsValidationOpen(true)}
+        metrics={metrics}
       />
     </div>
   );

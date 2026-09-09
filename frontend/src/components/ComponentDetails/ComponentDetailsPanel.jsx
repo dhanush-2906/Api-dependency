@@ -4,11 +4,11 @@ import {
   GitPullRequest, 
   ArrowDownRight, 
   ArrowUpLeft, 
-  Info, 
   Layers,
   FileCode,
-  Sparkles,
-  ChevronRight
+  AlertCircle,
+  TrendingUp,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function ComponentDetailsPanel({
@@ -34,6 +34,24 @@ export default function ComponentDetailsPanel({
 
   const { component, directDownstream, directUpstream, totalDownstreamCount, totalUpstreamCount } = selectedDetails;
 
+  // Calculate Exposure Risk Badge
+  let exposureLabel = 'Low Exposure';
+  let exposureColor = 'var(--app-color)';
+  let exposureBg = 'var(--app-bg)';
+  let exposureBorder = 'var(--app-border)';
+
+  if (totalDownstreamCount >= 5) {
+    exposureLabel = 'High Blast Exposure';
+    exposureColor = '#f87171';
+    exposureBg = 'rgba(239, 68, 68, 0.15)';
+    exposureBorder = 'rgba(239, 68, 68, 0.4)';
+  } else if (totalDownstreamCount >= 2) {
+    exposureLabel = 'Moderate Exposure';
+    exposureColor = '#fbbf24';
+    exposureBg = 'rgba(245, 158, 11, 0.15)';
+    exposureBorder = 'rgba(245, 158, 11, 0.4)';
+  }
+
   return (
     <div className="inspector-section">
       <div className="inspector-section-header">
@@ -44,6 +62,35 @@ export default function ComponentDetailsPanel({
         <span className={`nav-item-type-badge ${component.type.toLowerCase()}`}>
           {component.type === 'SERVICE' ? 'API' : component.type}
         </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div 
+          style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: 5, 
+            padding: '2px 8px', 
+            borderRadius: 'var(--radius-sm)', 
+            background: exposureBg, 
+            border: `1px solid ${exposureBorder}`,
+            color: exposureColor,
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em'
+          }}
+        >
+          {totalDownstreamCount >= 5 ? <AlertCircle size={11} /> : <ShieldCheck size={11} />}
+          <span>{exposureLabel}</span>
+        </div>
+
+        {component.sourceFile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+            <FileCode size={11} color="var(--brand-primary)" />
+            <span><code>{component.sourceFile}</code></span>
+          </div>
+        )}
       </div>
 
       <div className="inspector-stat-grid">
@@ -67,24 +114,18 @@ export default function ComponentDetailsPanel({
         </div>
       </div>
 
-      {component.sourceFile && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-          <FileCode size={12} color="var(--brand-primary)" />
-          <span>Defined in: <code>{component.sourceFile}</code></span>
-        </div>
-      )}
-
-      {/* Hero Action Buttons */}
+      {/* Hero Action Buttons with Microcopy */}
       <div className="hero-action-buttons">
         <button 
           className="hero-action-btn outage"
           onClick={() => onSimulateFailure(component.id)}
           disabled={loadingImpact}
+          title="Trace downstream dependencies and identify potentially affected systems"
         >
-          <ShieldAlert size={18} style={{ marginTop: 2 }} />
+          <ShieldAlert size={18} style={{ marginTop: 2, flexShrink: 0 }} />
           <div className="hero-action-btn-text">
             <h4>Simulate Outage</h4>
-            <p>Calculate downstream blast radius &amp; consumer impact</p>
+            <p>Trace downstream dependencies and identify potentially affected systems.</p>
           </div>
         </button>
 
@@ -92,11 +133,12 @@ export default function ComponentDetailsPanel({
           className="hero-action-btn change"
           onClick={() => onAnalyzeChange(component.id)}
           disabled={loadingImpact}
+          title="Identify downstream systems that may require validation after a change"
         >
-          <GitPullRequest size={18} style={{ marginTop: 2 }} />
+          <GitPullRequest size={18} style={{ marginTop: 2, flexShrink: 0 }} />
           <div className="hero-action-btn-text">
             <h4>Analyze Change Impact</h4>
-            <p>Identify dependent systems requiring validation</p>
+            <p>Identify downstream systems that may require validation after a change.</p>
           </div>
         </button>
       </div>
@@ -114,7 +156,7 @@ export default function ComponentDetailsPanel({
         ) : (
           <div className="interactive-chip-list">
             {directUpstream.map((u) => (
-              <span key={u.id} className="interactive-chip" onClick={() => onSelectComponent(u.id)}>
+              <span key={u.id} className="interactive-chip" onClick={() => onSelectComponent(u.id)} title="Click to inspect this provider">
                 {u.name}
               </span>
             ))}
@@ -134,7 +176,7 @@ export default function ComponentDetailsPanel({
         ) : (
           <div className="interactive-chip-list">
             {directDownstream.map((d) => (
-              <span key={d.id} className="interactive-chip" onClick={() => onSelectComponent(d.id)}>
+              <span key={d.id} className="interactive-chip" onClick={() => onSelectComponent(d.id)} title="Click to inspect this dependent">
                 {d.name}
               </span>
             ))}

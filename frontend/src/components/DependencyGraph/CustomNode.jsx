@@ -8,11 +8,12 @@ import {
   ShieldAlert, 
   Flame, 
   ArrowRight,
-  Sparkles
+  ArrowUpLeft,
+  ArrowDownRight
 } from 'lucide-react';
 
 function CustomNode({ data, selected }) {
-  const { name, type, status, distance, isSelected } = data;
+  const { name, type, status, distance, isSelected, isDirectNeighbor, neighborType } = data;
 
   const getTypeIcon = () => {
     switch (type) {
@@ -57,6 +58,27 @@ function CustomNode({ data, selected }) {
     );
   } else if (status === 'UNAFFECTED') {
     nodeStateClass = 'unaffected-dimmed';
+  } else if (status === 'UNCONNECTED_DIMMED') {
+    nodeStateClass = 'unaffected-dimmed';
+  }
+
+  // Analytical neighbor badge in normal mode
+  if (isDirectNeighbor && !statusChip) {
+    if (neighborType === 'UPSTREAM') {
+      nodeStateClass += ' neighbor-upstream';
+      statusChip = (
+        <span className="node-status-chip" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', border: '1px solid #6366f1' }}>
+          <ArrowUpLeft size={10} /> Upstream Provider
+        </span>
+      );
+    } else if (neighborType === 'DOWNSTREAM') {
+      nodeStateClass += ' neighbor-downstream';
+      statusChip = (
+        <span className="node-status-chip" style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#7dd3fc', border: '1px solid #38bdf8' }}>
+          <ArrowDownRight size={10} /> Downstream Consumer
+        </span>
+      );
+    }
   }
 
   const isHighlighted = isSelected || selected;

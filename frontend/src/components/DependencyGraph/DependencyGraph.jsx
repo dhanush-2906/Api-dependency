@@ -12,14 +12,11 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { 
-  ZoomIn, 
-  ZoomOut, 
   Maximize2, 
   LayoutGrid, 
-  MapPin, 
   Eye, 
   EyeOff,
-  Move
+  Focus
 } from 'lucide-react';
 
 import CustomNode from './CustomNode';
@@ -33,6 +30,7 @@ const nodeTypes = {
 function GraphInner({
   graphData,
   selectedComponentId,
+  selectedDetails,
   onSelectComponent,
   mode,
   impactData,
@@ -51,6 +49,14 @@ function GraphInner({
 
     const statusMap = new Map();
     const distanceMap = new Map();
+
+    // Map direct upstream & downstream neighbors when in NORMAL mode with a selection
+    const directUpstreamSet = new Set(
+      selectedDetails?.directUpstream?.map(u => u.id) || []
+    );
+    const directDownstreamSet = new Set(
+      selectedDetails?.directDownstream?.map(d => d.id) || []
+    );
 
     if (mode === 'FAILURE_SIMULATION' && impactData) {
       statusMap.set(impactData.rootComponent.id, 'FAILED_ROOT');
@@ -82,11 +88,27 @@ function GraphInner({
 
     const rawNodes = graphData.nodes.map(n => {
       let nodeStatus = 'NORMAL';
+      let isDirectNeighbor = false;
+      let neighborType = null;
+
       if (mode !== 'NORMAL') {
         if (statusMap.has(n.id)) {
           nodeStatus = statusMap.get(n.id);
         } else {
           nodeStatus = 'UNAFFECTED';
+        }
+      } else if (selectedComponentId) {
+        // Analytical highlighting in Normal Mode
+        if (n.id === selectedComponentId) {
+          nodeStatus = 'SELECTED';
+        } else if (directUpstreamSet.has(n.id)) {
+          isDirectNeighbor = true;
+          neighborType = 'UPSTREAM';
+        } else if (directDownstreamSet.has(n.id)) {
+          isDirectNeighbor = true;
+          neighborType = 'DOWNSTREAM';
+        } else {
+          nodeStatus = 'UNCONNECTED_DIMMED';
         }
       }
 
@@ -99,27 +121,40 @@ function GraphInner({
           type: n.type,
           status: nodeStatus,
           distance: distanceMap.get(n.id),
-          isSelected: n.id === selectedComponentId
+          isSelected: n.id === selectedComponentId,
+          isDirectNeighbor,
+          neighborType
         },
         position: { x: 0, y: 0 }
       };
     });
 
     const rawEdges = graphData.edges.map(e => {
-      const isImpactedSource = statusMap.has(e.source);
-      const isImpactedTarget = statusMap.has(e.target);
-      const isImpactEdge = mode !== 'NORMAL' && isImpactedSource && isImpactedTarget;
-
       let edgeColor = '#243456';
       let strokeWidth = 1.5;
       let animated = false;
 
-      if (isImpactEdge) {
-        edgeColor = mode === 'FAILURE_SIMULATION' ? '#ef4444' : '#f59e0b';
-        strokeWidth = 2.5;
-        animated = true;
-      } else if (mode !== 'NORMAL') {
-        edgeColor = '#141e33';
+      if (mode !== 'NORMAL') {
+        const isImpactedSource = statusMap.has(e.source);
+        const isImpactedTarget = statusMap.has(e.target);
+        const isImpactEdge = isImpactedSource && isImpactedTarget;
+
+        if (isImpactEdge) {
+          edgeColor = mode === 'FAILURE_SIMULATION' ? '#ef4444' : '#f59e0b';
+          strokeWidth = 2.5;
+          animated = true;
+        } else {
+          edgeColor = '#141e33';
+        }
+      } else if (selectedComponentId) {
+        // Highlight edges directly touching selected component in normal mode
+        if (e.source === selectedComponentId || e.target === selectedComponentId) {
+          edgeColor = '#38bdf8';
+          strokeWidth = 2.2;
+          animated = true;
+        } else {
+          edgeColor = '#16233b';
+        }
       }
 
       return {
@@ -143,7 +178,7 @@ function GraphInner({
     const layouted = getLayoutedElements(rawNodes, rawEdges, layoutDirection);
     setNodes(layouted.nodes);
     setEdges(layouted.edges);
-  }, [graphData, selectedComponentId, mode, impactData, layoutDirection]);
+  }, [graphData, selectedComponentId, selectedDetails, mode, impactData, layoutDirection]);
 
   // Center on selected component when it changes
   useEffect(() => {
@@ -167,6 +202,19 @@ function GraphInner({
     fitView({ padding: 0.2, duration: 300 });
   };
 
+  const handleCenterSelected = () => {
+    if (selectedComponentId) {
+      const targetNode = getNode(selectedComponentId);
+      if (targetNode) {
+        setCenter(
+          targetNode.position.x + 110,
+          targetNode.position.y + 45,
+          { zoom: 1.1, duration: 300 }
+        );
+      }
+    }
+  };
+
   return (
     <div className="graph-canvas-container">
       <div className="graph-floating-toolbar">
@@ -181,10 +229,17 @@ function GraphInner({
 
         <div style={{ width: 1, height: 16, background: 'var(--border-default)' }}></div>
 
-        <button className="toolbar-btn" onClick={handleFitView} title="Fit Entire Topology to Screen">
+        <button className="toolbar-btn" onClick={handleFitView} title="Fit Entire Topology to Canvas">
           <Maximize2 size={13} />
           <span>Fit View</span>
         </button>
+
+        {selectedComponentId && (
+          <button className="toolbar-btn" onClick={handleCenterSelected} title="Center on Selected Component">
+            <Focus size={13} color="var(--brand-primary)" />
+            <span>Focus</span>
+          </button>
+        )}
 
         <button 
           className="toolbar-btn" 

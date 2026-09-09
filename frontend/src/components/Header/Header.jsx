@@ -1,23 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Network, 
-  Activity, 
   ShieldAlert, 
   GitPullRequest, 
   RotateCcw, 
   CheckCircle2, 
   AlertTriangle,
-  Layers,
-  Sparkles
+  Sparkles,
+  Command,
+  ChevronDown
 } from 'lucide-react';
 
 export default function Header({ 
   mode, 
   onReset, 
   onOpenValidation, 
+  onOpenPalette,
+  onRunScenario,
   validationReport 
 }) {
+  const [showScenarios, setShowScenarios] = useState(false);
   const hasIssues = validationReport?.issues?.length > 0;
+
+  const scenarios = [
+    {
+      id: 'auth-service',
+      type: 'FAILURE',
+      title: 'Auth Service Outage',
+      desc: 'Simulate core identity outage & calculate blast radius'
+    },
+    {
+      id: 'inventory-service',
+      type: 'CHANGE',
+      title: 'Inventory Service Modification',
+      desc: 'Analyze downstream change impact & test scope'
+    },
+    {
+      id: 'product-catalog-service',
+      type: 'FAILURE',
+      title: 'Product Catalog Failure',
+      desc: 'Cascading catalog outage across inventory & pricing'
+    },
+    {
+      id: 'payment-gateway',
+      type: 'FAILURE',
+      title: 'Payment Gateway Failure',
+      desc: 'External gateway disruption to payment & order flow'
+    }
+  ];
 
   return (
     <header className="app-header">
@@ -56,6 +86,58 @@ export default function Header({
       </div>
 
       <div className="header-right">
+        {/* Quick Demo Scenarios Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setShowScenarios(!showScenarios)}
+            title="Launch preset evaluation scenarios"
+          >
+            <Sparkles size={13} color="var(--brand-primary)" />
+            <span>Demo Scenarios</span>
+            <ChevronDown size={12} />
+          </button>
+
+          {showScenarios && (
+            <div className="scenarios-dropdown-menu">
+              <div className="scenarios-header">
+                <span>Select Evaluation Scenario</span>
+              </div>
+              {scenarios.map((sc, i) => (
+                <div 
+                  key={i} 
+                  className="scenario-menu-item"
+                  onClick={() => {
+                    onRunScenario(sc.id, sc.type);
+                    setShowScenarios(false);
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {sc.type === 'FAILURE' ? (
+                      <ShieldAlert size={13} color="#ef4444" />
+                    ) : (
+                      <GitPullRequest size={13} color="#f59e0b" />
+                    )}
+                    <span className="scenario-item-title">{sc.title}</span>
+                  </div>
+                  <span className="scenario-item-desc">{sc.desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Command Palette Button */}
+        <button 
+          className="btn btn-secondary" 
+          onClick={onOpenPalette}
+          title="Open Command & Search Palette (Ctrl+K)"
+        >
+          <Command size={13} />
+          <span>Palette</span>
+          <span className="search-shortcut-hint" style={{ position: 'static', marginLeft: 4 }}>Ctrl K</span>
+        </button>
+
         {mode !== 'NORMAL' && (
           <button 
             className="btn btn-secondary" 
@@ -63,7 +145,7 @@ export default function Header({
             title="Return to normal dependency exploration"
           >
             <RotateCcw size={13} />
-            <span>Reset Analysis</span>
+            <span>Reset</span>
           </button>
         )}
 
@@ -75,7 +157,7 @@ export default function Header({
           {hasIssues ? (
             <>
               <AlertTriangle size={13} color="#f59e0b" />
-              <span>Dataset Warnings ({validationReport.issues.length})</span>
+              <span>Warnings ({validationReport.issues.length})</span>
             </>
           ) : (
             <>

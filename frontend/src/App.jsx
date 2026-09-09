@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
+
 import Header from './components/Header/Header';
 import MetricCards from './components/Metrics/MetricCards';
 import SearchFilterBar from './components/Search/SearchFilterBar';
@@ -56,7 +58,7 @@ export default function App() {
       setValidationReport(vReport);
 
       // Default selection to first service if available
-      if (cList.length > 0) {
+      if (cList && cList.length > 0) {
         const firstService = cList.find(c => c.type === 'SERVICE') || cList[0];
         handleSelectComponent(firstService.id);
       }
@@ -74,6 +76,7 @@ export default function App() {
 
   // Handle component selection
   const handleSelectComponent = useCallback(async (id) => {
+    if (!id) return;
     setSelectedComponentId(id);
     try {
       const details = await getComponentById(id);
@@ -125,12 +128,14 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--accent-service)', marginBottom: '8px' }}>
-            Loading Dependency Graph...
+          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--brand-primary)', marginBottom: '6px' }}>
+            Initializing Dependency Topology...
           </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Ingesting YAML files and building canonical topology.</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Parsing YAML datasets &amp; building canonical graph model.
+          </p>
         </div>
       </div>
     );
@@ -138,12 +143,12 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: '480px', padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-danger)', marginBottom: '8px' }}>
-            Server Connection Error
+      <div className="app-shell" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '440px', padding: '24px', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ef4444', marginBottom: '8px' }}>
+            Unable to Connect to Backend
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>{error}</p>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>{error}</p>
           <button className="btn btn-primary" onClick={loadInitialData}>
             Retry Connection
           </button>
@@ -153,7 +158,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className="app-shell">
       <Header
         mode={mode}
         onReset={handleResetSimulation}
@@ -177,17 +182,19 @@ export default function App() {
           onSelectComponent={handleSelectComponent}
         />
 
-        <DependencyGraph
-          graphData={graphData}
-          selectedComponentId={selectedComponentId}
-          onSelectComponent={handleSelectComponent}
-          mode={mode}
-          impactData={impactData}
-          layoutDirection={layoutDirection}
-          onToggleLayout={handleToggleLayout}
-        />
+        <ReactFlowProvider>
+          <DependencyGraph
+            graphData={graphData}
+            selectedComponentId={selectedComponentId}
+            onSelectComponent={handleSelectComponent}
+            mode={mode}
+            impactData={impactData}
+            layoutDirection={layoutDirection}
+            onToggleLayout={handleToggleLayout}
+          />
+        </ReactFlowProvider>
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '360px', background: 'var(--bg-primary)', borderLeft: '1px solid var(--border-color)', overflowY: 'auto' }}>
+        <aside className="inspector-sidebar">
           <ComponentDetailsPanel
             selectedDetails={selectedDetails}
             onSimulateFailure={handleSimulateFailure}
@@ -203,7 +210,7 @@ export default function App() {
               onSelectComponent={handleSelectComponent}
             />
           )}
-        </div>
+        </aside>
       </main>
 
       <ValidationModal

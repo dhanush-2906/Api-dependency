@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -6,9 +6,21 @@ import {
   MiniMap,
   MarkerType,
   useNodesState,
-  useEdgesState
+  useEdgesState,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  Maximize2, 
+  LayoutGrid, 
+  MapPin, 
+  Eye, 
+  EyeOff,
+  Move
+} from 'lucide-react';
 
 import CustomNode from './CustomNode';
 import Legend from './Legend';
@@ -18,23 +30,25 @@ const nodeTypes = {
   custom: CustomNode
 };
 
-export default function DependencyGraph({
+function GraphInner({
   graphData,
   selectedComponentId,
   onSelectComponent,
   mode,
   impactData,
-  layoutDirection = 'LR',
+  layoutDirection,
   onToggleLayout
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [showMinimap, setShowMinimap] = useState(true);
 
-  // Process nodes and edges with dynamic statuses based on mode and impactData
+  const { fitView, setCenter, getNode } = useReactFlow();
+
+  // Process nodes and layout
   useEffect(() => {
     if (!graphData || !graphData.nodes) return;
 
-    // Map impact statuses
     const statusMap = new Map();
     const distanceMap = new Map();
 
@@ -66,7 +80,6 @@ export default function DependencyGraph({
       });
     }
 
-    // Convert API nodes to React Flow nodes
     const rawNodes = graphData.nodes.map(n => {
       let nodeStatus = 'NORMAL';
       if (mode !== 'NORMAL') {
@@ -92,22 +105,21 @@ export default function DependencyGraph({
       };
     });
 
-    // Build edges with styling & animations
     const rawEdges = graphData.edges.map(e => {
       const isImpactedSource = statusMap.has(e.source);
       const isImpactedTarget = statusMap.has(e.target);
-      const isImpactPathEdge = mode !== 'NORMAL' && isImpactedSource && isImpactedTarget;
+      const isImpactEdge = mode !== 'NORMAL' && isImpactedSource && isImpactedTarget;
 
-      let edgeColor = '#475569';
+      let edgeColor = '#243456';
       let strokeWidth = 1.5;
       let animated = false;
 
-      if (isImpactPathEdge) {
+      if (isImpactEdge) {
         edgeColor = mode === 'FAILURE_SIMULATION' ? '#ef4444' : '#f59e0b';
         strokeWidth = 2.5;
         animated = true;
       } else if (mode !== 'NORMAL') {
-        edgeColor = '#1e293b';
+        edgeColor = '#141e33';
       }
 
       return {
@@ -133,19 +145,54 @@ export default function DependencyGraph({
     setEdges(layouted.edges);
   }, [graphData, selectedComponentId, mode, impactData, layoutDirection]);
 
+  // Center on selected component when it changes
+  useEffect(() => {
+    if (selectedComponentId) {
+      const targetNode = getNode(selectedComponentId);
+      if (targetNode) {
+        setCenter(
+          targetNode.position.x + 110,
+          targetNode.position.y + 45,
+          { zoom: 1, duration: 400 }
+        );
+      }
+    }
+  }, [selectedComponentId, getNode, setCenter]);
+
   const onNodeClick = useCallback((_, node) => {
     onSelectComponent(node.id);
   }, [onSelectComponent]);
 
+  const handleFitView = () => {
+    fitView({ padding: 0.2, duration: 300 });
+  };
+
   return (
-    <div className="graph-viewport">
-      <div className="graph-layout-controls">
+    <div className="graph-canvas-container">
+      <div className="graph-floating-toolbar">
         <button 
-          className="btn btn-secondary" 
+          className="toolbar-btn" 
           onClick={onToggleLayout}
-          title="Toggle Graph Flow (Horizontal / Vertical)"
+          title="Toggle Hierarchical Flow Direction"
         >
-          Layout: {layoutDirection === 'LR' ? 'Horizontal (L?R)' : 'Vertical (T?B)'}
+          <LayoutGrid size={13} />
+          <span>{layoutDirection === 'LR' ? 'Horizontal (L?R)' : 'Vertical (T?B)'}</span>
+        </button>
+
+        <div style={{ width: 1, height: 16, background: 'var(--border-default)' }}></div>
+
+        <button className="toolbar-btn" onClick={handleFitView} title="Fit Entire Topology to Screen">
+          <Maximize2 size={13} />
+          <span>Fit View</span>
+        </button>
+
+        <button 
+          className="toolbar-btn" 
+          onClick={() => setShowMinimap(!showMinimap)}
+          title="Toggle MiniMap"
+        >
+          {showMinimap ? <EyeOff size={13} /> : <Eye size={13} />}
+          <span>MiniMap</span>
         </button>
       </div>
 
@@ -159,25 +206,37 @@ export default function DependencyGraph({
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.2}
-        maxZoom={1.5}
+        maxZoom={1.8}
       >
-        <Background color="#1e293b" gap={20} size={1} />
-        <Controls showInteractive={false} />
-        <MiniMap
-          nodeColor={(node) => {
-            const t = node.data?.type;
-            if (t === 'SERVICE') return '#38bdf8';
-            if (t === 'APPLICATION') return '#34d399';
-            if (t === 'DATABASE') return '#a78bfa';
-            if (t === 'EXTERNAL') return '#fbbf24';
-            return '#64748b';
-          }}
-          maskColor="rgba(15, 23, 42, 0.7)"
-          style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-        />
+        <Background color="#1a2744" gap={24} size={1} />
+        <Controls showInteractive={false} style={{ display: 'none' }} />
+        {showMinimap && (
+          <MiniMap
+            nodeColor={(node) => {
+              const t = node.data?.type;
+              if (t === 'SERVICE') return '#38bdf8';
+              if (t === 'APPLICATION') return '#34d399';
+              if (t === 'DATABASE') return '#c084fc';
+              if (t === 'EXTERNAL') return '#fbbf24';
+              return '#64748b';
+            }}
+            maskColor="rgba(7, 11, 20, 0.85)"
+            style={{ 
+              background: '#0c1220', 
+              border: '1px solid var(--border-default)', 
+              borderRadius: '8px',
+              bottom: 16,
+              right: 16
+            }}
+          />
+        )}
       </ReactFlow>
 
       <Legend mode={mode} />
     </div>
   );
+}
+
+export default function DependencyGraph(props) {
+  return <GraphInner {...props} />;
 }

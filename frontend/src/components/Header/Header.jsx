@@ -1,5 +1,15 @@
 import React from 'react';
-import { Activity, ShieldAlert, GitPullRequest, RefreshCw, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
+import { 
+  Network, 
+  Activity, 
+  ShieldAlert, 
+  GitPullRequest, 
+  RotateCcw, 
+  CheckCircle2, 
+  AlertTriangle,
+  Layers,
+  Sparkles
+} from 'lucide-react';
 
 export default function Header({ 
   mode, 
@@ -11,51 +21,66 @@ export default function Header({
 
   return (
     <header className="app-header">
-      <div className="header-branding">
-        <div className="header-logo">
-          <Layers size={22} />
+      <div className="header-left">
+        <div className="brand-icon-wrapper">
+          <Network size={18} />
         </div>
-        <div className="header-titles">
-          <h1>API Dependency Visualizer &amp; Change Impact Analyzer</h1>
-          <p>Visualize enterprise service dependencies &amp; analyze downstream blast radius</p>
+        <div className="brand-text">
+          <div className="brand-title-row">
+            <span className="brand-title">Dependency Intelligence</span>
+            <span className="brand-badge">UPS Enterprise</span>
+          </div>
+          <span className="brand-subtitle">API Topology &amp; Blast Radius Analyzer</span>
         </div>
       </div>
 
-      <div className="header-actions">
+      <div className="header-center">
         {mode === 'NORMAL' && (
-          <div className="mode-badge normal">
-            <Activity size={14} /> Normal Exploration
+          <div className="system-status-indicator normal">
+            <span className="status-dot green"></span>
+            <span>Ecosystem Operational</span>
           </div>
         )}
         {mode === 'FAILURE_SIMULATION' && (
-          <div className="mode-badge failure">
-            <ShieldAlert size={14} /> Outage Simulation Active
+          <div className="system-status-indicator failure">
+            <span className="status-dot red"></span>
+            <span>Outage Blast Simulation Active</span>
           </div>
         )}
         {mode === 'CHANGE_IMPACT_ANALYSIS' && (
-          <div className="mode-badge change">
-            <GitPullRequest size={14} /> Change Impact Analysis Active
+          <div className="system-status-indicator change">
+            <span className="status-dot amber"></span>
+            <span>Change Impact Analysis Active</span>
           </div>
         )}
+      </div>
 
+      <div className="header-right">
         {mode !== 'NORMAL' && (
-          <button className="btn btn-secondary" onClick={onReset} title="Reset simulation and return to graph exploration">
-            <RefreshCw size={14} /> Reset Simulation
+          <button 
+            className="btn btn-secondary" 
+            onClick={onReset}
+            title="Return to normal dependency exploration"
+          >
+            <RotateCcw size={13} />
+            <span>Reset Analysis</span>
           </button>
         )}
 
         <button 
           className="btn btn-secondary"
           onClick={onOpenValidation}
-          title="Inspect dataset validation status"
+          title="Inspect dataset schema &amp; normalization integrity"
         >
           {hasIssues ? (
             <>
-              <AlertTriangle size={14} color="#f59e0b" /> Dataset Warnings ({validationReport.issues.length})
+              <AlertTriangle size={13} color="#f59e0b" />
+              <span>Dataset Warnings ({validationReport.issues.length})</span>
             </>
           ) : (
             <>
-              <CheckCircle2 size={14} color="#10b981" /> Dataset Loaded
+              <CheckCircle2 size={13} color="#10b981" />
+              <span>Dataset Validated</span>
             </>
           )}
         </button>

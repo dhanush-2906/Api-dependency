@@ -1,0 +1,25 @@
+# render.yaml — Render Blueprint for Dependency Intelligence
+# Single unified web service: builds frontend, serves static bundle + API from Express backend
+
+services:
+  - type: web
+    name: dependency-intelligence
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run --prefix frontend build
+    startCommand: node backend/src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SQLITE_DB_PATH
+        value: ./data/ecosystem.db
+      - key: HF_TOKEN
+        sync: false
+      - key: HF_MODEL
+        value: mistralai/Mistral-7B-Instruct-v0.3
+      - key: HF_ROUTER_URL
+        value: https://api-inference.huggingface.co/models

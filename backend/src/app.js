@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const healthRoutes = require('./routes/health.routes');
 const componentRoutes = require('./routes/component.routes');
@@ -30,13 +32,23 @@ app.use('/api/metrics', metricsRoutes);
 app.use('/api/validation', validationRoutes);
 app.use('/api/ai', aiRoutes);
 
-// 404 Handler
-app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    error: `Route not found: ${req.method} ${req.originalUrl}`
+// Serve built React frontend in production
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA fallback — serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
   });
-});
+} else {
+  // 404 Handler (dev mode — no built frontend)
+  app.use((req, res, next) => {
+    res.status(404).json({
+      success: false,
+      error: `Route not found: ${req.method} ${req.originalUrl}`
+    });
+  });
+}
 
 // Central Error Handler
 app.use((err, req, res, next) => {

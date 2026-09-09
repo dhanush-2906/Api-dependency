@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "API Dependency Visualizer & Change Impact Analyzer - UPS Hackathon 2026",
   "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && npm start",
     "backend:start": "cd backend && npm start",
     "backend:dev": "cd backend && npm run dev",
     "backend:test": "cd backend && npm test",

@@ -8,6 +8,7 @@ const impactRoutes = require('./routes/impact.routes');
 const analysisRoutes = require('./routes/analysis.routes');
 const metricsRoutes = require('./routes/metrics.routes');
 const validationRoutes = require('./routes/validation.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const datasetService = require('./services/dataset.service');
 
@@ -27,6 +28,7 @@ app.use('/api/impact', impactRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/metrics', metricsRoutes);
 app.use('/api/validation', validationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

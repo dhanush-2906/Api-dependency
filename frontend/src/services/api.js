@@ -4,7 +4,7 @@ const API_BASE = '/api';
 
 const client = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -71,5 +71,32 @@ export const deleteComponent = async (id) => {
 
 export const resetEcosystem = async () => {
   const res = await client.post('/components/reset');
+  return res.data.data;
+};
+
+// ─── AI Architecture Copilot ─────────────────────────────────────────────────
+
+export const sendAiChat = async ({ message, history = [], selectedComponentId = null, activeAnalysis = null }) => {
+  const res = await client.post('/ai/chat', {
+    message,
+    history,
+    selectedComponentId,
+    activeAnalysis
+  });
+  return res.data.data;
+};
+
+export const executeAiMutation = async ({ operation, payload }) => {
+  const res = await client.post('/ai/execute', {
+    operation,
+    payload
+  });
+  return res.data.data;
+};
+
+export const getAiSuggestions = async (selectedComponentId = null) => {
+  const res = await client.get('/ai/suggestions', {
+    params: selectedComponentId ? { selectedComponentId } : {}
+  });
   return res.data.data;
 };

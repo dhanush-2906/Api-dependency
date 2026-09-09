@@ -18,7 +18,9 @@ export default function Header({
   onOpenPalette,
   onRunScenario,
   validationReport,
-  onResetEcosystem
+  onResetEcosystem,
+  onOpenCopilot,
+  isCopilotOpen
 }) {
   const [showScenarios, setShowScenarios] = useState(false);
   const hasIssues = validationReport?.issues?.length > 0;
@@ -138,6 +140,19 @@ export default function Header({
           <span>Palette</span>
           <span className="search-shortcut-hint" style={{ position: 'static', marginLeft: 4 }}>Ctrl K</span>
         </button>
+
+        {/* AI Architecture Copilot Button */}
+        {onOpenCopilot && (
+          <button 
+            className={`btn ${isCopilotOpen ? 'btn-primary' : 'btn-secondary'} ai-header-btn`}
+            onClick={onOpenCopilot}
+            title="Open AI Architecture Copilot (Ctrl+J)"
+          >
+            <Sparkles size={13} />
+            <span>AI Copilot</span>
+            <span className="search-shortcut-hint" style={{ position: 'static', marginLeft: 4 }}>Ctrl J</span>
+          </button>
+        )}
 
         {mode !== 'NORMAL' && (
           <button 

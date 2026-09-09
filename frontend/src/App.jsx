@@ -12,6 +12,8 @@ import CommandPaletteModal from './components/CommandPalette/CommandPaletteModal
 import ComponentModal from './components/Ecosystem/ComponentModal';
 import DeleteConfirmModal from './components/Ecosystem/DeleteConfirmModal';
 import MutationToast from './components/Ecosystem/MutationToast';
+import AiCopilotDrawer from './components/Copilot/AiCopilotDrawer';
+import AiCopilotTrigger from './components/Copilot/AiCopilotTrigger';
 
 import {
   getGraphData,
@@ -45,6 +47,8 @@ export default function App() {
   const [layoutDirection, setLayoutDirection] = useState('LR');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Initializing Dependency Topology...');
@@ -91,7 +95,7 @@ export default function App() {
   };
 
   /**
-   * Refresh all ecosystem data after a CRUD mutation (no page reload).
+   * Refresh all ecosystem data after a CRUD or AI mutation (no page reload).
    * Optionally selects a specific component ID after refresh.
    */
   const refreshEcosystem = useCallback(async (selectId = null) => {
@@ -128,12 +132,15 @@ export default function App() {
     loadInitialData();
   }, []);
 
-  // Global Keyboard Shortcuts (Ctrl+K or Cmd+K)
+  // Global Keyboard Shortcuts (Ctrl+K / Cmd+K for Palette, Ctrl+J / Cmd+J for AI Copilot)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsPaletteOpen(prev => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+        e.preventDefault();
+        setIsCopilotOpen(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -259,7 +266,7 @@ export default function App() {
 
   const handleConfirmDelete = async () => {
     if (!deleteModal.details) return;
-    const { component, totalDownstreamCount } = deleteModal.details;
+    const { component } = deleteModal.details;
     setIsDeleting(true);
     try {
       await deleteComponent(component.id);
@@ -329,6 +336,8 @@ export default function App() {
         onRunScenario={handleRunScenario}
         validationReport={validationReport}
         onResetEcosystem={handleResetEcosystem}
+        onOpenCopilot={() => setIsCopilotOpen(prev => !prev)}
+        isCopilotOpen={isCopilotOpen}
       />
 
       <MetricCards
@@ -420,6 +429,23 @@ export default function App() {
         componentName={deleteModal.details?.component?.name || ''}
         isDeleting={isDeleting}
         downstreamCount={deleteModal.details?.totalDownstreamCount || 0}
+      />
+
+      {/* ─── AI Architecture Copilot Drawer & Launcher ───────────────── */}
+      <AiCopilotDrawer
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        selectedComponentId={selectedComponentId}
+        selectedDetails={selectedDetails}
+        mode={mode}
+        impactData={impactData}
+        onSelectComponent={handleSelectComponent}
+        onRefreshEcosystem={refreshEcosystem}
+      />
+
+      <AiCopilotTrigger
+        isOpen={isCopilotOpen}
+        onToggle={() => setIsCopilotOpen(true)}
       />
 
       <MutationToast toast={toast} onDismiss={dismissToast} />

@@ -1,9 +1,11 @@
 const request = require('supertest');
 const app = require('../src/app');
 const datasetService = require('../src/services/dataset.service');
+const ecosystemStore = require('../src/services/ecosystemStore');
 
 describe('API Integration Tests', () => {
   beforeAll(() => {
+    ecosystemStore.reset();
     datasetService.initialize();
   });
 

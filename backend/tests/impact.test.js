@@ -1,9 +1,11 @@
 const datasetService = require('../src/services/dataset.service');
+const ecosystemStore = require('../src/services/ecosystemStore');
 const impactService = require('../src/services/impact.service');
 const metricsService = require('../src/services/metrics.service');
 
 describe('Impact and Metrics Analysis', () => {
   beforeAll(() => {
+    ecosystemStore.reset();
     datasetService.initialize();
   });
 

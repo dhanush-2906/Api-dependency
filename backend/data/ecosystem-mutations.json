@@ -1,5 +1,17 @@
 {
-  "components": [],
+  "components": [
+    {
+      "_id": "helo",
+      "name": "helo",
+      "type": "SERVICE",
+      "dependencies": [
+        "Auth Service"
+      ],
+      "consumers": [
+        "Cart Service"
+      ]
+    }
+  ],
   "updates": {},
   "deletedIds": []
 }

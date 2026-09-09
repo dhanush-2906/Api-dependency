@@ -25,3 +25,12 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+
+# SQLite Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
